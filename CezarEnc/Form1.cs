@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+
 //using System.Collections.Generic;
 //using System.ComponentModel;
 //using System.Data;
@@ -34,13 +36,22 @@ namespace CezarEnc
             core.text = text.Text;
             core.set_key(key.Text);
 
+            if (core.error_status)
+            {
+                MessageBox.Show(core.status_message, "Проблемка");
+                return;
+            }
+
             core.encrypted();
 
             if (!core.error_status)
             {
                 encrText.Text = core.encryp_Text;
             }
-            message.Text = core.status_message;
+            else
+            {
+                MessageBox.Show(core.status_message, "Проблемка");
+            }
 
         }
 
@@ -49,14 +60,42 @@ namespace CezarEnc
             core.encryp_Text = encrText.Text;
             core.set_key(key.Text);
 
+            if (core.error_status)
+            {
+                MessageBox.Show(core.status_message, "Проблемка");
+                return;
+            }
+
             core.decrypted();
 
             if (!core.error_status)
             {
-                text.Text = core.text;
+                textBox1.Text = core.text;
             }
-            message.Text = core.status_message;
+            else
+            {
+                MessageBox.Show(core.status_message, "Проблемка");
+            }
 
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            core.encryp_Text = encrText.Text;
+            String hack_text = core.hack_txt();
+            //core.set_key(key.Text);
+            //core.decrypted();
+
+            if (!core.error_status)
+            {
+                textBox2.Text = hack_text;
+                textBox3.Text = Convert.ToString(core.supposed_key);
+                textBox4.Text = core.getDictEnc();
+            }
+            else
+            {   
+                MessageBox.Show(core.status_message, "Проблемка");
+            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -89,6 +128,59 @@ namespace CezarEnc
             if (radioButton.Checked)
             {
                 core.lang_gl = "eng";
+            }
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox2_TextChanged_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                StreamReader file = new StreamReader(textBox5.Text);
+                text.Text = file.ReadToEnd();
+            }
+            catch
+            {
+                MessageBox.Show("Ошибка при чтении файла", "Проблемка");
             }
         }
     }

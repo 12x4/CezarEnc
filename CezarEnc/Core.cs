@@ -7,6 +7,11 @@ using System.Text;
 using System.Numerics;
 using System.CodeDom.Compiler;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices.ComTypes;
+using System.Collections.Generic;
+using System.Reflection;
+using System.IO;
+using System.Drawing.Printing;
 
 namespace CezarEnc
 {
@@ -21,8 +26,8 @@ namespace CezarEnc
 
         public String lang_gl {get; set;}
         
-
         private BigInteger key = new BigInteger();
+        public int supposed_key { get; set; }
 
         private String dictionary_Ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789";
         private String dictionary_En = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -31,6 +36,9 @@ namespace CezarEnc
         private int len_Dictionary_Ru = 43;
         private int len_Dictionary_En = 36;
 
+        private HackCez hack = new HackCez();
+
+        //Инициализация
         public Core()
         {
             error_status = false;
@@ -97,7 +105,7 @@ namespace CezarEnc
             //encryp_Text = cleanText(encryp_Text);
 
             //установление статуса работы анализом текста
-            set_status_through_lang(getLangText(encryp_Text), ref dict, ref dict_len);
+            set_status_through_lang(lang, ref dict, ref dict_len);
 
             //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
             if (error_status) return;
@@ -132,6 +140,62 @@ namespace CezarEnc
             text = decry_text.ToString();
         }
 
+        //дешифровка
+        public String hack_txt()
+        {
+            String lang = getLangText(encryp_Text);
+            StringBuilder decry_text = new StringBuilder();
+
+            String dict = null;
+            int dict_len = 0;
+
+            //очистка текста
+            //encryp_Text = cleanText(encryp_Text);
+
+            //установление статуса работы анализом текста
+            set_status_through_lang(lang, ref dict, ref dict_len);
+
+            //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
+            if (error_status) return null;
+
+            BigInteger indx;
+
+            if (lang == "num")
+            {
+                lang = lang_gl;
+            }
+
+            supposed_key = hack.hacking(encryp_Text, lang);
+
+            foreach (char symb in encryp_Text.ToLower())
+            {
+
+                if (dict.Contains(symb))
+                {
+                    indx = ((BigInteger)dict.IndexOf(symb) - supposed_key) % (BigInteger)dict_len;
+                    if (indx < 0)
+                    {
+                        indx += (BigInteger)dict_len;
+                    }
+
+                    decry_text.Append(dict[(int)indx]);
+                }
+
+                else
+                {
+                    decry_text.Append(symb);
+                }
+
+            }
+
+            //устанавливаем статус работы
+            status_message = "Успешно";
+            error_status = false;
+
+            return decry_text.ToString();
+
+        }
+
         //Очситка текста
         private String cleanText(String text)
         {
@@ -149,6 +213,7 @@ namespace CezarEnc
             return new_s.ToString();
         }
 
+        //метод для определения языка текста
         private String getLangText(String text)
         {
             String lang = "-1";
@@ -212,16 +277,21 @@ namespace CezarEnc
                 error_status = true;
                 return;
             }
+
             switch (lang)
             {
                 case "ru":
                     Xdict = dictionary_Ru;
                     Xdict_len = len_Dictionary_Ru;
+                    status_message = "Успешно";
+                    error_status = false;
                     break;
 
                 case "eng":
                     Xdict = dictionary_En;
                     Xdict_len = len_Dictionary_En;
+                    status_message = "Успешно";
+                    error_status = false;
                     break;
 
                 case "0":
@@ -248,10 +318,6 @@ namespace CezarEnc
                     return;
                 }
             }
-
-
-
-
         }
 
         //Проверка и установка ключа
@@ -259,15 +325,13 @@ namespace CezarEnc
         {
             try 
             {   
-                foreach(char symb in _key)
+                if (_key.Contains(' '))
                 {
-                    if (symb == ' ')
-                    {
-                        status_message = "Неправильный ключ\n Ключ это целочисленное число!!!";
-                        error_status = true;
-                        return;
-                    }
+                    status_message = "Неправильный ключ\n Ключ это целочисленное число!!!";
+                    error_status = true;
+                    return;
                 }
+                
 
                 key = BigInteger.Parse(_key);
                 status_message = "Успешно";
@@ -278,6 +342,136 @@ namespace CezarEnc
                 status_message = "Неправильный ключ\n Ключ это целочисленное число!!!";
                 error_status = true;
             }
+        }
+
+        public String getDictEnc()
+        {
+            StringBuilder new_str = new StringBuilder();
+            foreach(var per in hack.data.Reverse())
+            {
+                new_str.Append($"{per.Key} - {Math.Round(per.Value, 4)}%" + Environment.NewLine);
+            }
+
+            return new_str.ToString();
+        }
+    }
+
+    internal class HackCez
+    {
+        internal int supposed_key { get; set; }
+
+        private Dictionary<char, double> data_ru = new Dictionary<char, double>();
+        private Dictionary<char, double> data_eng = new Dictionary<char, double>();
+
+        internal Dictionary<char, double> data  = new Dictionary<char, double>();
+
+        private String dictionary_Ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789";
+        private String dictionary_Eng = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+        private String ru_path_txt = "C:\\Users\\Камиль Тухватуллин\\source\\repos\\CezarEnc\\CezarEnc\\dataTxt\\dataRu.txt";
+        private String eng_path_txt = "C:\\Users\\Камиль Тухватуллин\\source\\repos\\CezarEnc\\CezarEnc\\dataTxt\\dataEng.txt";
+
+        internal HackCez()
+        {
+            setDictThAnlzFile(ru_path_txt, ref data_ru);
+            setDictThAnlzFile(eng_path_txt, ref data_eng);
+        }
+
+        // Устанавливаем в словарь данные текста
+        internal void setDictThAnlzFile(String file, ref Dictionary<char, double> data)
+        {
+            StreamReader _file = new StreamReader(file);
+            String [] s = new String [2];
+            
+            while (!_file.EndOfStream)
+            {
+                s = _file.ReadLine().Split();
+                data.Add(Convert.ToChar(s[0]), Convert.ToDouble(s[1]));
+            }
+
+        }
+
+        // Устанавливаем в словарь данные текста
+        internal void setDictThAnlzText(String text, ref Dictionary<char, double> data)
+        {
+            double len_text = text.Length;
+            Dictionary<char, int> data_lok = new Dictionary<char, int>();
+
+            foreach (char symbl in text.ToLower())
+            {
+                if (data_lok.ContainsKey(symbl))
+                {
+                    data_lok[symbl] += 1;
+                }
+                else
+                {
+                    data_lok.Add(symbl, 1);
+                }
+            }
+
+            data.Clear();
+
+            foreach (var poz in data_lok)
+            {
+                data.Add(poz.Key, (poz.Value / len_text) * 100);
+            }
+
+            data = data.OrderBy(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+        }
+
+        // Установка предполагаемого ключа
+        internal void setSuppKey(ref Dictionary<char, double> data_enc, String lang)
+        {
+            Dictionary<char, double> data = null;
+
+            switch (lang)
+            {
+                case "ru":
+                    data = data_ru;
+                    break;
+
+                case "eng":
+                    data = data_eng;
+                    break;
+            }
+            // Находим максимальное значение в каждом словаре
+            double max1 = data.Values.Max();
+            double max2 = data_enc.Values.Max();
+
+            // Находим ключи с максимальными значениями в каждом словаре
+            char keysWithMax1 = getKeyThrouVal(ref data, max1);
+            char keysWithMax2 = getKeyThrouVal(ref data_enc, max2);
+
+            switch(lang)
+            {
+                case "ru":
+                    supposed_key = dictionary_Ru.IndexOf(Convert.ToChar(keysWithMax2)) - dictionary_Ru.IndexOf(Convert.ToChar(keysWithMax1));
+                    break;
+
+                case "eng":
+                    supposed_key = dictionary_Eng.IndexOf(Convert.ToChar(keysWithMax2)) - dictionary_Eng.IndexOf(Convert.ToChar(keysWithMax1));
+                    break;
+            }
+
+        }
+
+        internal int hacking(String text, String lang)
+        {
+            setDictThAnlzText(text, ref data);
+            setSuppKey(ref data, lang);
+
+            return supposed_key;
+        }
+
+        // возвращает ключ по элементу
+        private char getKeyThrouVal(ref Dictionary<char, double> dict, double val)
+        {            
+            foreach(var per in dict)
+            {
+                if (per.Value == val) { return per.Key; }
+            }
+
+            return ' ';
         }
     }
 }
