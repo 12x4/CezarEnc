@@ -83,8 +83,12 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="dataTxt\dataEng.txt" />
-    <Content Include="dataTxt\dataRu.txt" />
+    <Content Include="dataTxt\dataEng.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="dataTxt\dataRu.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

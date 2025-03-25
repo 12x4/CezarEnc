@@ -368,8 +368,8 @@ namespace CezarEnc
         private String dictionary_Ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789";
         private String dictionary_Eng = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-        private String ru_path_txt = "C:\\Users\\Камиль Тухватуллин\\source\\repos\\CezarEnc\\CezarEnc\\dataTxt\\dataRu.txt";
-        private String eng_path_txt = "C:\\Users\\Камиль Тухватуллин\\source\\repos\\CezarEnc\\CezarEnc\\dataTxt\\dataEng.txt";
+        private String ru_path_txt = "dataTxt\\dataRu.txt";
+        private String eng_path_txt = "dataTxt\\dataEng.txt";
 
         internal HackCez()
         {
