@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+
 
 //using System.Collections.Generic;
 //using System.ComponentModel;
@@ -33,12 +35,12 @@ namespace CezarEnc
 
         private void button1_Click(object sender, EventArgs e)
         {
-            core.text = text.Text;
+            core.text = text.Text.ToLower();
             core.set_key(key.Text);
 
             if (core.error_status)
             {
-                MessageBox.Show(core.status_message, "Проблемка");
+                MessageBox.Show(core.error_message, "Проблемка");
                 return;
             }
 
@@ -50,7 +52,7 @@ namespace CezarEnc
             }
             else
             {
-                MessageBox.Show(core.status_message, "Проблемка");
+                MessageBox.Show(core.error_message, "Проблемка");
             }
 
         }
@@ -62,7 +64,7 @@ namespace CezarEnc
 
             if (core.error_status)
             {
-                MessageBox.Show(core.status_message, "Проблемка");
+                MessageBox.Show(core.error_message, "Проблемка");
                 return;
             }
 
@@ -74,28 +76,9 @@ namespace CezarEnc
             }
             else
             {
-                MessageBox.Show(core.status_message, "Проблемка");
+                MessageBox.Show(core.error_message, "Проблемка");
             }
 
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            core.encryp_Text = encrText.Text;
-            String hack_text = core.hack_txt();
-            //core.set_key(key.Text);
-            //core.decrypted();
-
-            if (!core.error_status)
-            {
-                textBox2.Text = hack_text;
-                textBox3.Text = Convert.ToString(core.supposed_key);
-                textBox4.Text = core.getDictEnc();
-            }
-            else
-            {   
-                MessageBox.Show(core.status_message, "Проблемка");
-            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -141,47 +124,14 @@ namespace CezarEnc
 
         }
 
-        private void label5_Click(object sender, EventArgs e)
+        private void label3_Click(object sender, EventArgs e)
         {
 
         }
 
-        private void textBox2_TextChanged_1(object sender, EventArgs e)
+        private void textBox1_TextChanged_1(object sender, EventArgs e)
         {
 
-        }
-
-        private void textBox4_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label6_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label7_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void textBox5_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                StreamReader file = new StreamReader(textBox5.Text);
-                text.Text = file.ReadToEnd();
-            }
-            catch
-            {
-                MessageBox.Show("Ошибка при чтении файла", "Проблемка");
-            }
         }
     }
 }

@@ -21,72 +21,94 @@ namespace CezarEnc
         internal String text { get; set; }
         internal String encryp_Text { get; set; }
 
-        internal String status_message { get; set; }
-        public bool error_status {get; set;}
+        internal String error_message { get; set; }
+        public bool error_status { get; set; }
 
-        public String lang_gl {get; set;}
-        
-        private BigInteger key = new BigInteger();
+        public String lang_gl { get; set; }
+
+        private String key = null;
         public int supposed_key { get; set; }
 
         private String dictionary_Ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789";
         private String dictionary_En = "abcdefghijklmnopqrstuvwxyz0123456789";
         private String numbers = "0123456789";
 
-        private int len_Dictionary_Ru = 43;
-        private int len_Dictionary_En = 36;
+        private const int len_Dictionary_Ru = 43;
+        private const int len_Dictionary_En = 36;
 
-        private HackCez hack = new HackCez();
+        private char[][] arr_ru_2x2 = new char[len_Dictionary_Ru][];
+        private char[][] arr_eng_2x2 = new char[len_Dictionary_En][];
 
         //Инициализация
         public Core()
         {
             error_status = false;
             lang_gl = "";
+
+            for (int i = 0; i < len_Dictionary_Ru; i++) { arr_ru_2x2[i] = new char[len_Dictionary_Ru]; }
+            for (int i = 0; i < len_Dictionary_En; i++) { arr_eng_2x2[i] = new char[len_Dictionary_En]; }
+
+
+            for (int i = 0; i < len_Dictionary_Ru; i++)
+            {
+                for (int g = 0; g < len_Dictionary_Ru; g++)
+                {
+
+                    arr_ru_2x2[i][g] = dictionary_Ru[(i + g + 1) % len_Dictionary_Ru];
+                }
+            }
+
+            for (int i = 0; i < len_Dictionary_En; i++)
+            {
+                for (int g = 0; g < len_Dictionary_En; g++)
+                {
+
+                    arr_eng_2x2[i][g] = dictionary_En[(i + g + 1) % len_Dictionary_En];
+                }
+            }
+
         }
 
         //шифровка
         public void encrypted()
         {
             String lang = getLangText(text);
+
+            String key_new = keyExtensn(key, text.Length);
             StringBuilder ecn_text = new StringBuilder();
 
-            String dict = null;
+            char [][] dict = null;
             int dict_len = 0;
+            String _dict = null;
 
-            //очистка текста
-            //text = cleanText(text);
-
-            //установление статуса работы анализом текста
-            set_status_through_lang(lang, ref dict, ref dict_len);
-
+            //Проверяем корректность выбранного языка
+            isCorrectLangInstld(lang);
             //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
-            if (error_status) return;
+            if (error_status) { return; }
 
-            BigInteger indx;
+            //установление статус работы
+            setStatusThrghLang(lang);
+            //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
+            if (error_status) { return; }
 
-            foreach (char symb in text.ToLower())
+            //устанавливаем значения в dict и dict_len и _dict
+            setArrThroughLang(ref dict);
+            setDictThroughLang(ref _dict);
+            setLenThroughLang(ref dict_len);
+
+            for (int i = 0; i < key_new.Length; i++)
             {
 
-                if (dict.Contains(symb))
-                {
-                    indx = ((BigInteger)dict.IndexOf(symb) + key) % (BigInteger)dict_len;
-                    if (indx < 0)
-                    {
-                        indx += (BigInteger)dict_len;
-                    }
-                    ecn_text.Append(dict[(int)indx]);
-                }
+                int x, y;
 
-                else
-                {
-                    ecn_text.Append(symb);
-                }
+                x = _dict.IndexOf(key_new[i]);
+                y = _dict.IndexOf(text[i]);
+
+                ecn_text.Append(dict[x][y]);
 
             }
 
             //устанавливаем статус работы
-            status_message = "Успешно";
             error_status = false;
 
             encryp_Text = ecn_text.ToString();
@@ -96,119 +118,87 @@ namespace CezarEnc
         public void decrypted()
         {
             String lang = getLangText(encryp_Text);
-            StringBuilder decry_text = new StringBuilder();
 
-            String dict = null;
+            String key_new = keyExtensn(key, encryp_Text.Length);
+            StringBuilder decr_text = new StringBuilder();
+
+            char[][] dict = null;
             int dict_len = 0;
+            String _dict = null;
 
-            //очистка текста
-            //encryp_Text = cleanText(encryp_Text);
-
-            //установление статуса работы анализом текста
-            set_status_through_lang(lang, ref dict, ref dict_len);
-
+            //Проверяем корректность выбранного языка
+            isCorrectLangInstld(lang);
             //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
-            if (error_status) return;
+            if (error_status) { return; }
 
-            BigInteger indx;
+            //установление статус работы
+            setStatusThrghLang(lang);
+            //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
+            if (error_status) { return; }
 
-            foreach (char symb in encryp_Text.ToLower())
+            //устанавливаем значения в dict и dict_len и _dict
+            setArrThroughLang(ref dict);
+            setDictThroughLang(ref _dict);
+            setLenThroughLang(ref dict_len);
+
+            for (int i = 0; i < key_new.Length; i++)
             {
 
-                if (dict.Contains(symb))
-                {
-                    indx = ((BigInteger)dict.IndexOf(symb) - key) % (BigInteger)dict_len;
-                    if (indx < 0)
-                    {
-                        indx += (BigInteger)dict_len;
-                    }
+                int x, y;
 
-                    decry_text.Append(dict[(int)indx]);
+                x = _dict.IndexOf(key_new[i]);
+                y = _dict.IndexOf(encryp_Text[i]);
+
+                int shift = y - (x + 1);
+
+                if (shift < 0)
+                {
+                    shift += dict_len;
                 }
 
-                else
-                {
-                    decry_text.Append(symb);
-                }
+                decr_text.Append(dict[x][shift]);
 
             }
 
             //устанавливаем статус работы
-            status_message = "Успешно";
             error_status = false;
 
-            text = decry_text.ToString();
-        }
-
-        //дешифровка
-        public String hack_txt()
-        {
-            String lang = getLangText(encryp_Text);
-            StringBuilder decry_text = new StringBuilder();
-
-            String dict = null;
-            int dict_len = 0;
-
-            //очистка текста
-            //encryp_Text = cleanText(encryp_Text);
-
-            //установление статуса работы анализом текста
-            set_status_through_lang(lang, ref dict, ref dict_len);
-
-            //если в ходе анализа или в другом месте вылезла ошибка то прекращаем работу
-            if (error_status) return null;
-
-            BigInteger indx;
-
-            if (lang == "num")
-            {
-                lang = lang_gl;
-            }
-
-            supposed_key = hack.hacking(encryp_Text, lang);
-
-            foreach (char symb in encryp_Text.ToLower())
-            {
-
-                if (dict.Contains(symb))
-                {
-                    indx = ((BigInteger)dict.IndexOf(symb) - supposed_key) % (BigInteger)dict_len;
-                    if (indx < 0)
-                    {
-                        indx += (BigInteger)dict_len;
-                    }
-
-                    decry_text.Append(dict[(int)indx]);
-                }
-
-                else
-                {
-                    decry_text.Append(symb);
-                }
-
-            }
-
-            //устанавливаем статус работы
-            status_message = "Успешно";
-            error_status = false;
-
-            return decry_text.ToString();
-
+            encryp_Text = decr_text.ToString();
         }
 
         //Очситка текста
-        private String cleanText(String text)
+        public String cleanText(String text)
         {
             StringBuilder new_s = new StringBuilder();
-            String del_symbl = "";
+            String _symbl = "";
 
-            foreach(char symb in text)
+            if (lang_gl == "")
             {
-                if (!del_symbl.Contains(symb))
+                error_message = "Выберите язык";
+                error_status = true;
+                return text;
+            }
+
+            switch (lang_gl)
+            {
+                case "ru":
+                    _symbl = dictionary_Ru;
+                    break;
+
+                case "eng":
+                    _symbl = dictionary_En;
+                    break;
+            }
+
+            foreach(char symb in text.ToLower())
+            {
+                if (_symbl.Contains(symb))
                 {
                     new_s.Append(symb);
                 }
             }
+
+            error_status = false;
 
             return new_s.ToString();
         }
@@ -269,209 +259,163 @@ namespace CezarEnc
         }
 
         //установка статуса анализом языка
-        private void set_status_through_lang(String lang, ref String Xdict, ref int Xdict_len)
+        private void setStatusThrghLang(String lang)
         {
-            if (lang_gl == "")
-            {
-                status_message = "Выберите язык";
-                error_status = true;
-                return;
-            }
 
             switch (lang)
             {
                 case "ru":
+                    error_status = false;
+                    break;
+
+                case "eng":
+                    error_status = false;
+                    break;
+
+                case "0":
+                    error_message = "Язык неопределенн или есть лишние символы";
+                    error_status = true;
+                    break;
+
+                case "-1":
+                    error_message = "Нету текста";
+                    error_status = true;
+                    break;
+
+                case "num":
+                    setStatusThrghLang(lang_gl);
+                    return;
+            }
+        }
+        
+        //
+        private void setArrThroughLang(ref char[][] Xdict)
+        {
+
+            switch (lang_gl)
+            {
+                case "ru":
+                    Xdict = arr_ru_2x2;
+                    error_status = false;
+                    break;
+
+                case "eng":
+                    Xdict = arr_eng_2x2;
+                    error_status = false;
+                    break;
+            }
+
+        }
+
+        //
+        private void setDictThroughLang(ref String Xdict)
+        {
+            switch (lang_gl)
+            {
+                case "ru":
                     Xdict = dictionary_Ru;
-                    Xdict_len = len_Dictionary_Ru;
-                    status_message = "Успешно";
                     error_status = false;
                     break;
 
                 case "eng":
                     Xdict = dictionary_En;
-                    Xdict_len = len_Dictionary_En;
-                    status_message = "Успешно";
                     error_status = false;
                     break;
-
-                case "0":
-                    status_message = "Язык неопределенн или есть лишние символы";
-                    error_status = true;
-                    break;
-
-                case "-1":
-                    status_message = "Нету текста";
-                    error_status = true;
-                    break;
-
-                case "num":
-                    set_status_through_lang(lang_gl, ref Xdict, ref Xdict_len);
-                    return;
             }
 
-            if(!error_status)
+        }
+
+        //
+        private void setLenThroughLang(ref int Xlen)
+        {
+
+            switch(lang_gl)
             {
-                if (lang_gl != lang)
-                {
-                    status_message = "Выбран неправильный язык";
-                    error_status = true;
-                    return;
-                }
+                case "ru":
+                    Xlen = len_Dictionary_Ru;
+                    break;
+
+                case "eng":
+                    Xlen = len_Dictionary_En;
+                    break;
             }
+
+        }
+
+        // Проверка на корректный выбор языка 
+        private bool isCorrectLangInstld(String lang)
+        {
+
+            if (lang_gl == "")
+            {
+                error_message = "Выберите язык";
+                error_status = true;
+                return false;
+            }
+
+            if (lang == "num")
+            {
+                return true;
+            }
+
+            if (lang_gl != lang)
+            {
+                error_message = "Выбран неправильный язык";
+                error_status = true;
+                return false;
+            }
+
+            error_status = false;
+            return true; 
         }
 
         //Проверка и установка ключа
         public void set_key(String _key)
         {
-            try 
-            {   
-                if (_key.Contains(' '))
-                {
-                    status_message = "Неправильный ключ\n Ключ это целочисленное число!!!";
+            String lang_key = getLangText(_key);
+
+            // Проверяем на корректность выбранного языка
+            if (!isCorrectLangInstld(lang_key)) { return; }
+
+
+            switch (lang_key)
+            {
+                case "ru":
+                    error_status = false;
+                    break;
+
+                case "eng":
+                    error_status = false;
+                    break;
+
+                case "num":
+                    lang_key = lang_gl;
+                    error_status = false;
+                    break;
+
+                default:
+                    error_message = "Неправильный ключ";
                     error_status = true;
-                    return;
-                }
-                
+                    break;
+            }
 
-                key = BigInteger.Parse(_key);
-                status_message = "Успешно";
-                error_status = false;
-            }
-            catch
-            {
-                status_message = "Неправильный ключ\n Ключ это целочисленное число!!!";
-                error_status = true;
-            }
+            key = _key.ToLower();
+
         }
 
-        public String getDictEnc()
+        //Удлинение ключча до необходимой длины
+        private String keyExtensn(String org_key, int len_text)
         {
-            StringBuilder new_str = new StringBuilder();
-            foreach(var per in hack.data.Reverse())
-            {
-                new_str.Append($"{per.Key} - {Math.Round(per.Value, 4)}%" + Environment.NewLine);
-            }
+            StringBuilder key = new StringBuilder();
 
-            return new_str.ToString();
+            int count = len_text / org_key.Length;
+
+            for (int i = 0; i < count; i++) { key.Append(org_key); }
+            for (int i = 0; i < len_text % org_key.Length; i++) { key.Append(org_key[i]); }
+
+            return key.ToString();
         }
+
     }
 
-    internal class HackCez
-    {
-        internal int supposed_key { get; set; }
-
-        private Dictionary<char, double> data_ru = new Dictionary<char, double>();
-        private Dictionary<char, double> data_eng = new Dictionary<char, double>();
-
-        internal Dictionary<char, double> data  = new Dictionary<char, double>();
-
-        private String dictionary_Ru = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789";
-        private String dictionary_Eng = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-        private String ru_path_txt = "dataTxt\\dataRu.txt";
-        private String eng_path_txt = "dataTxt\\dataEng.txt";
-
-        internal HackCez()
-        {
-            setDictThAnlzFile(ru_path_txt, ref data_ru);
-            setDictThAnlzFile(eng_path_txt, ref data_eng);
-        }
-
-        // Устанавливаем в словарь данные текста
-        internal void setDictThAnlzFile(String file, ref Dictionary<char, double> data)
-        {
-            StreamReader _file = new StreamReader(file);
-            String [] s = new String [2];
-            
-            while (!_file.EndOfStream)
-            {
-                s = _file.ReadLine().Split();
-                data.Add(Convert.ToChar(s[0]), Convert.ToDouble(s[1]));
-            }
-
-        }
-
-        // Устанавливаем в словарь данные текста
-        internal void setDictThAnlzText(String text, ref Dictionary<char, double> data)
-        {
-            double len_text = text.Length;
-            Dictionary<char, int> data_lok = new Dictionary<char, int>();
-
-            foreach (char symbl in text.ToLower())
-            {
-                if (data_lok.ContainsKey(symbl))
-                {
-                    data_lok[symbl] += 1;
-                }
-                else
-                {
-                    data_lok.Add(symbl, 1);
-                }
-            }
-
-            data.Clear();
-
-            foreach (var poz in data_lok)
-            {
-                data.Add(poz.Key, (poz.Value / len_text) * 100);
-            }
-
-            data = data.OrderBy(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
-        }
-
-        // Установка предполагаемого ключа
-        internal void setSuppKey(ref Dictionary<char, double> data_enc, String lang)
-        {
-            Dictionary<char, double> data = null;
-
-            switch (lang)
-            {
-                case "ru":
-                    data = data_ru;
-                    break;
-
-                case "eng":
-                    data = data_eng;
-                    break;
-            }
-            // Находим максимальное значение в каждом словаре
-            double max1 = data.Values.Max();
-            double max2 = data_enc.Values.Max();
-
-            // Находим ключи с максимальными значениями в каждом словаре
-            char keysWithMax1 = getKeyThrouVal(ref data, max1);
-            char keysWithMax2 = getKeyThrouVal(ref data_enc, max2);
-
-            switch(lang)
-            {
-                case "ru":
-                    supposed_key = dictionary_Ru.IndexOf(Convert.ToChar(keysWithMax2)) - dictionary_Ru.IndexOf(Convert.ToChar(keysWithMax1));
-                    break;
-
-                case "eng":
-                    supposed_key = dictionary_Eng.IndexOf(Convert.ToChar(keysWithMax2)) - dictionary_Eng.IndexOf(Convert.ToChar(keysWithMax1));
-                    break;
-            }
-
-        }
-
-        internal int hacking(String text, String lang)
-        {
-            setDictThAnlzText(text, ref data);
-            setSuppKey(ref data, lang);
-
-            return supposed_key;
-        }
-
-        // возвращает ключ по элементу
-        private char getKeyThrouVal(ref Dictionary<char, double> dict, double val)
-        {            
-            foreach(var per in dict)
-            {
-                if (per.Value == val) { return per.Key; }
-            }
-
-            return ' ';
-        }
-    }
 }
